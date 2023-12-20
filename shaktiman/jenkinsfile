@@ -1,0 +1,41 @@
+pipeline {
+    agent any
+    environment {
+        APP_NAME = "shaktiman"
+        RELEASE = "1.0.0"
+        DOCKER_USER = "navathej408"
+        DOCKER_PASS = 'dockerhub'
+        IMAGE_NAME = "${DOCKER_USER}" + "/" + "${APP_NAME}"
+        IMAGE_TAG = "${RELEASE}-${BUILD_NUMBER}"
+    }
+    stages {
+        stage("Clear Workspace"){
+            steps{
+                cleanWs()
+            }
+        }
+        stage ("Downlod Code") {
+            steps {
+                git 'https://github.com/thej950/shaktiman.git'
+            }
+        }
+        stage ("Build Code") {
+            steps {
+                sh 'mvn package'
+            }
+        }
+        stage ("Build Docker image and Push into dockerhub") {
+            steps {
+                script {
+                     docker.withRegistry('',DOCKER_PASS){
+                        docker_image = docker.build "${IMAGE_NAME}"
+                     }
+                     docker.withRegistry('',DOCKER_PASS){
+                        docker_image.push("${IMAGE_TAG}")
+                        docker_image.push('latest')
+                     }
+                }
+            }
+        }
+    }
+}
